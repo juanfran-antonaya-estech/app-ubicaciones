@@ -7,10 +7,14 @@ import androidx.room.PrimaryKey
 data class Fuente(
     val lat: Double,
     val lng: Double,
-    val visitada: Boolean,
-
+    var visitada: Boolean,
+    var nombre: String,
+    var temperatura: String,
+    var funciona: Boolean,
+    var boquillas: Int,
+    var puntuacion: Double
 
 ){
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0
+    var id: Int = 0
 }

@@ -5,21 +5,31 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.ui.AppBarConfiguration
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.viewModels
 import androidx.navigation.NavController
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.juanfra.appubicaciones.R
+import com.juanfra.appubicaciones.data.MapViewModel
 import com.juanfra.appubicaciones.databinding.ActivityMainBinding
+import com.juanfra.appubicaciones.ui.fragment.BottomSheet
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
+    val viewModel by viewModels<MapViewModel>{
+        MapViewModel.MyViewModelFactory(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        BottomSheet.viewModel = viewModel
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -48,7 +58,33 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
 
-        map.mapType = GoogleMap.MAP_TYPE_NORMAL
+        map.mapType = GoogleMap.MAP_TYPE_HYBRID
+        val bottomSheet = BottomSheet()
+
+
+        map.setOnMapClickListener {
+            bottomSheet.show(supportFragmentManager, "BottomSheet")
+            viewModel.actualLatLng.value = it
+            viewModel.actualFuente.value = null
+        }
+
+        map.setOnMarkerClickListener {
+            viewModel.actualLatLng.value = it.position
+            it.snippet?.toInt()?.let { it1 -> viewModel.obtenerFuentePorId(it1) }
+            bottomSheet.show(supportFragmentManager, "BottomSheet")
+            true
+        }
+
+        viewModel.obtenerTodasFuentes().observe(this){
+            it.forEach {
+                val marker = MarkerOptions()
+                    .title(it.nombre)
+                    .snippet(it.id.toString())
+                    .position(LatLng(it.lat, it.lng))
+                map.addMarker(marker)
+            }
+
+        }
 
     }
 }
